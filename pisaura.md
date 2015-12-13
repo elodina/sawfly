@@ -1,4 +1,4 @@
-# Pisaura - Simoorg on Mesos Scheduler
+# Pisaura a Simoorg on Mesos Scheduler
 
 Pisaura is is a scheduler that runs Simoorg on Mesos.
 
