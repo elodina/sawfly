@@ -1,11 +1,10 @@
 Tristan a Zipkin Mesos Framework
 ======================
+Tristan is a scheduler that runs Zipkin on Mesos.
 
-Zipkin is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data through a Collector and a Query service.  
+Zipkin, a distributed tracing system, is open source software distributed under the Apache License 2.0.  It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data through a Collector and a Query service.  
 
-This Zipkin Mesos Framework is a scheduler that runs Zipkin on Mesos.
-
-This Zipkin Mesos framework is being actively developed by Elodina Inc. and is available as a free trial. In the event that community support is sufficient, Elodina plans to release the framework as an open source project distributed under the Apache License, Version 2.0.
+Tristan is being actively developed by Elodina Inc. and is available as a free trial. In the event that community support is sufficient, Elodina plans to release the framework as an open source project distributed under the Apache License, Version 2.0.
 
 Prerequisites
 -------------
