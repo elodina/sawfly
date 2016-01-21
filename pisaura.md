@@ -1,8 +1,8 @@
-# Pisaura a Simoorg on Mesos Scheduler
+# Pisaura: A Chaos Failure Inducer Scheduler for Mesos
 
-Pisaura is is a scheduler that runs Simoorg on Mesos.
+Pisaura is a scheduler that runs chaos failure "fatebook" tests on Apache Mesos.
 
-Simoorg is linkedin’s open source chaos failure inducer framework. It was designed to be easy to extend and most of the important components are pluggable.
+Pisaura is based on NetFlix's Chaos Monkey and LinkedIn's Simoorg open source chaos failure inducer frameworks. It was designed to be easy to extend and most of the important components are pluggable.
 
 Pisaura is being actively developed by Elodina Inc. and is available as a free trial. In the event that community support is sufficient, Elodina plans to release the framework as an open source project distributed under the Apache License, Version 2.0.
 
