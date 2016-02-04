@@ -20,29 +20,7 @@ $ godep restore
 $ go build .
 ```
 
-## Using Docker
-You can use prepared script to build docker image:
-```bash
-./build_docker.sh
-```
-It'll create docker image with tag `monarch`
-
-For this build you should have files in current dir:
-```
-'server.crt' - SSL cert for server
-'server.key' - SSL private key
-'producer.properties' - Configuration for Kafka Producer
-```
-
-Than, you can run it, for example this way:
-```bash
-docker run \
-  -e "VAULT_TOKEN=$VAULT_TOKEN" \
-  monarch \
-  monarch scheduler -artifact.host=192.168.99.100 -master=192.168.99.100:5050
-```
-
-## Without Docker
+## Running Monarch
 You can use Monarch without docker, just prepare following files and place them somewhere in your mesos cluster:
 - "monarch": executable binary (for launching scheduler, cli commands)
 - "executor.tgz": archive with "monarch" binary for executors
