@@ -1,4 +1,4 @@
-Cloud Cluster Deployer
+Cluster API
 ===========
 
 Table of Contents
@@ -18,6 +18,7 @@ Table of Contents
     * [Common usage scenario for Mesos on Azure](#common-usage-scenario-for-mesos-on-azure)
     * [Common usage scenario for DCOS on AWS](#common-usage-scenario-for-dcos-on-aws)
     * [Common usage scenario for DCOS on Azure](#common-usage-scenario-for-dcos-on-azure)
+    * [Mesos Cli Cluster Access](#mesos-cli-cluster-access)
     * [Mesos Cluster VPN Access](#mesos-cluster-vpn-access)
     * [DCOS Cluster VPN Access](#dcos-cluster-vpn-access)
 
@@ -63,40 +64,7 @@ OS X:
 
 3. ssh vagrant@127.0.0.1 -p 2222; password - vagrant
 
-4. (In vagrant) run There are some difficulties with using packer in case of using "Enhanced Networking" and Centos/RHEL OS.
-Why?
-How AMI image for was created with enhanced networking support:
-1) Instance with ordinary Centos HVM image was created
-2) Updated all software, added repository with Enhanced networking driver
-3) Created config file for Enhanced Networking interface(it is not eth0, but ens3)
-4) Instance was Powered off
-5) Enhanced networking was turned on
-6) Snapshot was taken and converted to AMI
-
-The main problem of Packer/etc is that we cannot first create instance with Enanced Networking turned ON, provision it and then
-There are some difficulties with using packer in case of using "Enhanced Networking" and Centos/RHEL OS.
-Why?
-How AMI image for was created with enhanced networking support:
-1) Instance with ordinary Centos HVM image was created
-2) Updated all software, added repository with Enhanced networking driver
-3) Created config file for Enhanced Networking interface(it is not eth0, but ens3)
-4) Instance was Powered off
-5) Enhanced networking was turned on
-6) Snapshot was taken and converted to AMI
-
-The main problem of Packer/etc is that we cannot first create instance with Enanced Networking turned ON, provision it and then
-There are some difficulties with using packer in case of using "Enhanced Networking" and Centos/RHEL OS.
-Why?
-How AMI image for was created with enhanced networking support:
-1) Instance with ordinary Centos HVM image was created
-2) Updated all software, added repository with Enhanced networking driver
-3) Created config file for Enhanced Networking interface(it is not eth0, but ens3)
-4) Instance was Powered off
-5) Enhanced networking was turned on
-6) Snapshot was taken and converted to AMI
-
-The main problem of Packer/etc is that we cannot first create instance with Enanced Networking turned ON, provision it and then
-
+4. (In vagrant) run cd /vagrant
 
 5. (In vagrant) run ./run
 
@@ -250,7 +218,7 @@ PUT - change group parameters, example:
 ```
 curl -X PUT -d "name=group2" -d "role=role1" -d "attributes={\"foo\":\"bar\"}" -d "vars={\"var1\":\"varvalue1\"}" -d "instance_type=r3.xlarge" -d "cpus=10" -d "ram=64" -d "disk_size=50" http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups/${group_name}
 ```
-   
+
 required parameters - name(variable), role(variable), attributes(escaped json format), vars(escaped json format), instance_type(for AWS, for example - m3.large, for Azure, for example - Basic_A3), cpus(number of cpus per group), ram(amount of GB of ram per group), disk_size(hdd size, per HOST)
 
 optional parameters:
@@ -271,6 +239,13 @@ example of customhwconf:
 
 All of the new created disks will be mounted to /hdd/xvd{last letter of disk name, eg, x, y, whatever}
 
+spot_price(group of slaves will be make of spot instances), example:
+
+```
+-d "spot_price=0.9"
+```
+
+
 Cluster Deployment API Requests
 -------------------------------
 
@@ -280,40 +255,83 @@ http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
 
 Supported requests:
 
-GET - get clusters deployment parameters, example:
+GET - get clusters deployment status, example:
 
 ```
 curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
 ```
 
-DELETE - delete clusters deployment, example:
+Cluster Infrastructure Deployment API Requests
+----------------------------------------------
 
 ```
-curl -X DELETE http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
 ```
 
-PUT - run deployment/destroy, example:
+Supported requests:
+
+GET - get clusters infrastructure deployment status, example:
+
+```
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
+```
+
+DELETE - destroy cluster's infrastructure(virtual machines, networks, etc), example:
+
+```
+curl -X DELETE http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
+```
+
+PUT - deploy cluster's infrastructure(virtual machines, networks, etc), example:
 
 AWS:
 ```
-curl -X PUT -d "aws_access_key_id=${key_id}" -d "aws_secret_access_key=${secret}" -d "command=deploy" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+curl -X PUT -d "aws_access_key_id=${key_id}" -d "aws_secret_access_key=${secret}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
 ```
 
 AZURE:
 ```
-curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment -X PUT -d "command=deploy" -d "credentials=`cat credentials | base64 -w 0 | tr '+/' '-_'`"
+curl -X PUT -d "credentials=`cat credentials | base64 -w 0 | tr '+/' '-_'`" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
 ```
 
 required parameters:
 
 common:
-parallelism(number of deploy threads, higher number increase deployment speed, but may cause instability, default is 5), command(command to run, deploy/destroy)
+parallelism(number of deploy threads, higher number increase deployment speed, but may cause instability, default is 5)
 
 aws:
 aws_access_key_id(self descriptive), aws_secret_access_key(self descriptive)
 
 azure:
 credentials(credentials file, can be aquired here: https://manage.windowsazure.com/publishsettings )
+
+
+Cluster Provision API Requests
+------------------------------
+
+```
+http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
+```
+
+Supported requests:
+
+GET - get clusters provision status, example:
+
+```
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
+```
+
+PUT - run cluster's provision(install software, configure settings, etc), example:
+
+AWS:
+```
+curl -X PUT http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
+```
+
+AZURE:
+```
+curl -X PUT http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
+```
 
 Common usage scenario for Mesos on AWS
 --------------------------------------
@@ -336,10 +354,16 @@ Create group of slaves
 curl -X POST -d "name=${group_name}" -d "role=role1" -d "attributes={\"foo\":\" bar\"}" -d "vars={\"foo\":\"bar\"}" -d "cpus=10" -d "ram=64" -d "disk_size=50" http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups
 ```
 
-Deploy cluster
+Deploy cluster's infrastructure
 
 ```
-curl -X PUT -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" -d "command=deploy" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+curl -X PUT -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
+```
+
+Provision cluster
+
+```
+curl -X PUT http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
 ```
 
 Change slaves group size:
@@ -348,16 +372,22 @@ Change slaves group size:
 curl -X POST -d "name=${group_name}" -d "role=role1" -d "attributes={\"purpose\":\"log_storing\"}" -d "vars={\"x_factor\":\"42\"}" -d "cpus=20" -d "ram=128" -d "disk_size=50" http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups
 ```
 
-Apply changes
+Apply changes to infrastructure
 
 ```
-curl -X PUT -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" -d "command=deploy" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+curl -X PUT -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
 ```
 
-Destroy clusters
+Provision fresh nodes
 
 ```
-curl -X PUT -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" -d "command=destroy" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+curl -X PUT http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
+```
+
+Destroy cluster
+
+```
+curl -X DELETE -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
 ```
 
 Delete clusters config, etc:
@@ -388,22 +418,28 @@ Create group of slaves
 curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups -X POST -d "name=${group_name}" -d "role=role1" -d "attributes={\"purpose\":\"analytics\"}" -d "vars={\"y_factor\":\"43\"}" -d "cpus=12" -d "ram=16" -d "disk_size=50" -d "instance_type=Standard_D11"
 ```
 
-Deploy cluster
+Deploy cluster's infrastructure
 
 ```
-curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment -X PUT -d "command=deploy" -d "credentials=`cat credentials | base64 | tr '+/' '-_'`"
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure -X PUT -d "credentials=`cat credentials | base64 | tr '+/' '-_'`"
+```
+
+Provision cluster
+
+```
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision -X PUT
 ```
 
 Destroy cluster
-    
+
 ```
-curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment -X PUT -d "command=destroy" -d "credentials=`cat credentials | base64 | tr '+/' '-_'`"
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure -X DELETE -d "credentials=`cat credentials | base64 | tr '+/' '-_'`"
 ```
 
 Delete cluster configs, etc
 
 ```
-curl -X DELETE http://localhost:5555/api/v1.0/clusters/${cluster_name}
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name} -X DELETE
 ```
 
 
@@ -428,19 +464,25 @@ Create group of slaves
 curl -X POST -d "instance_type=r3.xlarge" -d "name=${group_name}" -d "role=myslaves" -d "attributes={\"type\":\"myslaves\"}" -d "vars={\"foo\":\"bar\"}" -d "cpus=12" -d "ram=60" -d "disk_size=200" http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups
 ```
 
-Deploy cluster
+Deploy cluster's infrastructure
 
 ```
-curl -X PUT -d "aws_access_key_id=${key_id}" -d "aws_secret_access_key=${secret}" -d "command=deploy" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+curl -X PUT -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
+```
+
+Provision cluster
+
+```
+curl -X PUT http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision
 ```
 
 Destroy cluster
 
 ```
-curl -X PUT -d "aws_access_key_id=${key_id}" -d "aws_secret_access_key=${secret}" -d "command=destroy" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment
+curl -X DELETE -d aws_access_key_id=${key_id} -d "aws_secret_access_key=${secret}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure
 ```
 
-Delete cluster configs, etc
+Delete clusters config, etc:
 
 ```
 curl -X DELETE http://localhost:5555/api/v1.0/clusters/${cluster_name}
@@ -468,23 +510,42 @@ Create group of slaves
 curl -X POST -d "instance_type=Basic_A2"  -d "name=${group_name}" -d "role=myslaves" -d "attributes={\"type\":\"myslaves\"}" -d "vars={\"foo\":\"bar\"}" -d "cpus=12" -d "ram=60" -d "disk_size=200" http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups
 ```
 
-Deploy cluster
+Deploy cluster's infrastructure
 
 ```
-curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment -X PUT -d "command=deploy" -d "credentials=`cat credentials | base64 -w 0 | tr '+/' '-_'`"
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure -X PUT -d "credentials=`cat credentials | base64 | tr '+/' '-_'`"
+```
+
+Provision cluster
+
+```
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/provision -X PUT
 ```
 
 Destroy cluster
 
 ```
-curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment -X PUT -d "command=destroy" -d "credentials=`cat credentials | base64 -w 0 | tr '+/' '-_'`"
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure -X DELETE -d "credentials=`cat credentials | base64 | tr '+/' '-_'`"
 ```
 
 Delete cluster configs, etc
 
 ```
-curl -X DELETE http://localhost:5555/api/v1.0/clusters/${cluster_name}
+curl http://localhost:5555/api/v1.0/clusters/${cluster_name} -X DELETE
 ```
+
+
+Mesos Cli Cluster Access
+------------------------
+
+There are mesos-cli available on terminal
+For transparent usage it is recommended to switch to user "manager" first:
+```
+su -l manager
+```
+Mesos cli documentation:
+
+https://github.com/mesosphere/mesos-cli
 
 
 Mesos Cluster VPN Access
@@ -493,8 +554,8 @@ Mesos Cluster VPN Access
 OpenVPN for MacOS Setup:
 
 1. Install Tunnelblick
-2. go to curl -X http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment and save _accessip parameter
-3. ssh to _accessip, and create there some users and passwd them, using commands adduser/passwd respectivly, eg:
+2. go to curl -X http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure and get _accessip parameter
+3. ssh to _accessip, and create there some users and passwd them, using commands adduser/passwd respectively, eg:
 
 ```adduser vpnuser1```
 
@@ -502,14 +563,15 @@ OpenVPN for MacOS Setup:
 
 3. get OpenVPN config:
 ```
-echo -e \`curl -qs http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/vpn | tr -d '"'\`
+echo -e `curl -qs http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/vpn | tr -d '"'`
 ```
 4. Save config as ${cluster_name}.ovpn file
-5. Import this config into Tunnelblick by double clicking on file
-6. Connect to VPN using credentials from step 3)
-7. Following services are available
+5. ssh to _accessip and save /etc/openvpn/keys/ca.crt near ${cluster_name}.ovpn file
+6. Import this config into Tunnelblick by double clicking on ovpn file
+7. Connect to VPN using credentials from step 3)
+8. Following services are available
 
-Mesos: 
+Mesos:
 ```
 http://leader.mesos.service.${cluster_name}:5050/
 ```
@@ -528,8 +590,8 @@ DCOS Cluster VPN Access
 OpenVPN for MacOS Setup:
 
 1. Install Tunnelblick
-2. go to curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment and save _accessip parameter
-3. ssh to _accessip, and create there some users and passwd them, using commands adduser/passwd respectivly, eg:
+2. go to curl http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/infrastructure and save _accessip parameter
+3. ssh to _accessip, and create there some users and passwd them, using commands adduser/passwd respectively, eg:
 
 ```adduser vpnuser1```
 
@@ -537,12 +599,13 @@ OpenVPN for MacOS Setup:
 
 3. get OpenVPN config:
 ```
-echo -e \`curl -qs http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/vpn | tr -d '"'\`
+echo -e `curl -qs http://localhost:5555/api/v1.0/clusters/${cluster_name}/deployment/vpn | tr -d '"'`
 ```
 4. Save config as ${cluster_name}.ovpn file
-5. Import this config into Tunnelblick by double clicking on file
-6. Connect to VPN using credentials from step 3)
-7. Following services are available
+5. ssh to _accessip and save /etc/openvpn/keys/ca.crt near ${cluster_name}.ovpn file
+6. Import this config into Tunnelblick by double clicking on ovpn file
+7. Connect to VPN using credentials from step 3)
+8. Following services are available
 
 DCOS GUI:
 ```
@@ -557,3 +620,58 @@ Marathon:
 http://192.168.164.1/marathon/
 ```
 
+Raid and single disk handling
+-----------------------------
+
+In order to have raids and disks handling, we need to pass raid/disk structure inside group's vars in escaped JSON format
+
+Structure format:
+
+For RAID handling:
+```
+raids:
+  ${raid_number}:
+    mountpoint: "${mount_directory}"
+    fstype: "${filesystem}"
+    level: "${raid_level}"
+    devices:
+      - /dev/${one_disk}
+      - /dev/${another_disk}
+```
+Where
+
+${raid_number} is unsigned integer value, e.g. 0, 1, 2
+
+${mount_directory} - is arbitrary directory in the system, for example, /data
+
+${filesystem} - is file system type, for example, xfs, ext4
+
+${raid_level} - is RAID's level, e.g. 0, 1, 5, 6, etc
+
+${one_disk} - disk device name, for example, xvdx
+
+${another_disk} - another disk device name, for example, xvdy
+
+
+For Disk handling:
+
+```
+disks:
+  ${disk_name}:
+    mountpoint: "${mount_directory}"
+    fstype: "${filesystem}"
+```
+
+Where
+
+${disk_name} - disk device name, for example, xvdz
+
+${mount_directory} - is arbitrary directory in the system, for example, /commitlog
+
+${filesystem} - is file system type, for example, xfs, ext4
+
+Example of creation of group with raid and disks handling
+
+```
+curl -X POST -d "instance_type=r3.xlarge" -d "name=infra" -d "role=infra" -d "attributes={\"type\":\"infra\"}" -d "vars={\"raids\":{\"0\":{\"mountpoint\":\"/data\",\"fstype\":\"xfs\",\"level\":\"0\",\"devices\":[\"/dev/xvdx\",\"/dev/xvdy\"]}},\"disks\":{\"xvdz\":{\"mountpoint\":\"/commitlog\",\"fstype\":\"xfs\"}}}" -d "cpus=10" -d "ram=64" -d "disk_size=50" -d "customhwconf={\"ebs_block_device\":[{\"device_name\":\"/dev/sdx\",\"volume_size\":\"200\",\"volume_type\":\"gp2\"},{\"device_name\":\"/dev/sdy\",\"volume_size\":\"200\",\"volume_type\":\"gp2\"},{\"device_name\":\"/dev/sdz\",\"volume_size\":\"200\",\"volume_type\":\"gp2\"}]}" http://localhost:5555/api/v1.0/clusters/${cluster_name}/groups
+```
