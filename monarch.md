@@ -20,13 +20,34 @@ $ godep restore
 $ go build .
 ```
 
-## Running Monarch
+## Using Docker
+You can use prepared script to build docker image:
+```bash
+./build_docker.sh
+```
+It'll create docker image with tag `monarch`
+
+For this build you should have files in current dir:
+```
+'server.crt' - SSL cert for server
+'server.key' - SSL private key
+'producer.properties' - Configuration for Kafka Producer
+```
+
+Than, you can run it, for example this way:
+```bash
+docker run \
+  -e "VAULT_TOKEN=$VAULT_TOKEN" \
+  monarch \
+  monarch scheduler -artifact.host=192.168.99.100 -master=192.168.99.100:5050
+```
+
+## Without Docker
 You can use Monarch without docker, just prepare following files and place them somewhere in your mesos cluster:
-- "monarch": executable binary (for launching scheduler, cli commands)
+- "monarch": executable binary (for launching scheduler and cli commands)
 - "executor.tgz": archive with "monarch" binary for executors
 - "server.crt" - SSL cert for server
 - "server.key" - SSL private key
-- "producer.properties" - Config file for Kafka producer
 
 ## Usage
 ```bash
@@ -39,34 +60,41 @@ Available commands are:
     scale           Scale executors
     scheduler       Starts Monarch Scheduler
 ```
-### Step 1. Configure Kafka Producer
-Then prepare the Kafka producer properties file with bootsrap.servers value:
 
-```
-# producer.properties
-# ...
-bootstrap.servers=kafka.broker1:31001,kafka.broker2:31000
-# ...
-```
-
-### Step 2. Connect to Vault
+### Step 1. Connect to Vault
 Ensure that Vault is up and running and set environment variable `VAULT_TOKEN` to your Vault authentication token.
 
-### Step 3. Run scheduler
+### Step 2. Run scheduler
 ```bash
-$ ./monarch scheduler -artifact.host=<artifact_server_host> -master=<mesos_master_host:port>
+$ ./monarch scheduler --artifact-host=<artifact_server_host> --master=<mesos_master_host:port> --broker-list=<kafka.broker1:port>,<kafka.broker2:port>
 ```
-On this step by default you'll have one executor instance run with scheduler.
+On this step by default you will have no executor instances run with scheduler.
 
 Parameters:
 ```
-  -producer.config: Producer config file name. Default: "producer.properties"
-  -artifact.host: Artifact server host. Default: "localhost"
-  -artifact.port: Artifact server port. Default: 4242
-  -master: Mesos Master address <ip:port>. Default: "127.0.0.1:5050"
-  -executor.archive: Executor archive name. Default: "executor.tgz"
-  -vault: Vault URL. Default: "http://127.0.0.1:8200/"
+  --artifact-host: Artifact server host. Default: "localhost"
+  --artifact-port: Artifact server port. Default: 4242
+  --master: Mesos Master address <ip:port>. Default: "127.0.0.1:5050"
+  --executor.archive: Executor archive name. Default: "executor.tgz"
+  --vault: Vault URL. Default: "http://127.0.0.1:8200/"
+  --broker-list: Kafka broker list. Default: "localhost:9092"
+  --cpu: CPU per executor task. Default: 0.1
+  --mem: Memory per task. Default: 64
+  --user: Framework user. Default: "root"
+  --topic: Topic for schema registry. Default: "schemas"
 ```
+
+### Step 3. Run executors
+To add new executors to scheduler there is `scale` command:
+```bash
+$ ./monarch scale --executor <executor_name> --instances <number>
+```
+Parameters:
+```
+  --executor: Executor name to scale. Now supporterd `beaker` and `schema` executors.
+  --instances: Number of instances. Could be less or more than now launched.
+```
+
 ### Step 4. Add clients
 To add client to Monarch use `adduser` command:
 ```bash
@@ -74,14 +102,7 @@ $ ./monarch adduser -name=johnsnow -api="http://scheduler.server.ip:port"
 User johnsnow created. API key: fc36f4c8-edd5-499b-8601-bcc9640cb233
 ```
 
-### Step 5 (Optional). Scale
-You can change number of executor instances by simple:
-```bash
-$ ./monarch scale -instances 3 -api="http://scheduler.server.ip:port"
-Scaled to 3 instances
-```
-
-### Step 6 (Optional). Refresh client api key
+### Step 5 (Optional). Refresh client api key
 To assign new api key for user:
 ```bash
 $ ./monarch refreshtoken -name=johnsnow -api="http://scheduler.server.ip:port"
@@ -111,3 +132,6 @@ Example request:
 ```
 This request will produce data to the namespaced topic `<clientname>_metrics`.
 
+## Monarch Schema Registry
+
+Monarch Schema Registry executor is fully compatible with [Confluent Schema Registry API](http://docs.confluent.io/2.0.0/schema-registry/docs/index.html).
