@@ -508,7 +508,7 @@ curl -X DELETE http://localhost:5555/api/v2.0/grids/${grid_name}
 ```
 
 
-Common usage scenario for Mesos on Azure
+Common usage scenario for Mesos on Microsoft Azure
 ----------------------------------------
 
 Create grid
@@ -553,7 +553,7 @@ Delete grid configs, etc
 curl http://localhost:5555/api/v2.0/grids/${grid_name} -X DELETE
 ```
 
-Common usage scenario for Mesos on GCS
+Common usage scenario for Mesos on Google Cloud Platform
 --------------------------------------
 
 Create grid
@@ -684,7 +684,7 @@ curl -X DELETE http://localhost:5555/api/v1.0/grids/${grid_name}
 ```
 
 
-Common usage scenario for DCOS on Azure
+Common usage scenario for DCOS on Microsoft Azure
 ---------------------------------------
 
 Create grid
